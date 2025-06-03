@@ -1,0 +1,12 @@
+Main.java: 프로그램의 시작점, 사용자 인터페이스 실행
+db/: DB 연결 위한 utility class 포함한 dir
+    -db/DBConnection.java: MySQL과의 연결을 열고 닫는 class. JDBC URL, ID/PW 등 설정 포함
+model/: DB table 구조 표현하는 class들 포함한 dir
+    - Passenger.java : 승객 정보를 담는 class
+    - Reservation.java : 예약 정보를 담는 class
+    - Ticket.java : 티켓 발행 정보 담는 class
+service/: 실제 DB query 실행하는 JDBC 관련 class가 위치
+    - service/ReservationService.java
+        ex) addPassenger(Passenger passenger) → INSERT
+            getScheduleByTrainName(String name) → JOIN + VIEW SELECT
+frontend/: 텍스트 기반 UI 처리, 사용자 input 받아 service로 전달
