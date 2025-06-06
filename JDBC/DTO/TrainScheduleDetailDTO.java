@@ -1,47 +1,38 @@
 package com.dbproject.train_reservation_system.dto;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 public class TrainScheduleDetailDTO {
 	private String trainId;
     private String trainName;
-    private String trainType;
-    private String departureStationName;
-    private String arrivalStationName;
-    private Timestamp departureTime;
-    private Timestamp arrivalTime;
+    private String departureStation;
+    private String arrivalStation;
+    private LocalDateTime departureTime;
+    private LocalDateTime arrivalTime;
 
-    public TrainScheduleDetailDTO(String trainId, String trainName, String trainType,
-                                  String departureStationName, String arrivalStationName,
-                                  Timestamp departureTime, Timestamp arrivalTime) {
-        this.trainId = trainId;
-        this.trainName = trainName;
-        this.trainType = trainType;
-        this.departureStationName = departureStationName;
-        this.arrivalStationName = arrivalStationName;
-        this.departureTime = departureTime;
-        this.arrivalTime = arrivalTime;
+    public TrainScheduleDetailDTO(String trainId, String trainName,
+            String departureStation, String arrivalStation,
+            LocalDateTime departureTime, LocalDateTime arrivalTime) {
+    	this.trainId = trainId;
+    	this.trainName = trainName;
+    	this.departureStation = departureStation;
+    	this.arrivalStation = arrivalStation;
+    	this.departureTime = departureTime;
+    	this.arrivalTime = arrivalTime;
     }
 
     public String getTrainId() { return trainId; }
-    public void setTrainId(String trainId) { this.trainId = trainId; }
-
     public String getTrainName() { return trainName; }
+    public String getDepartureStation() { return departureStation; }
+    public String getArrivalStation() { return arrivalStation; }
+    public LocalDateTime getDepartureTime() { return departureTime; }
+    public LocalDateTime getArrivalTime() { return arrivalTime; }
+
+    public void setTrainId(String trainId) { this.trainId = trainId; }
     public void setTrainName(String trainName) { this.trainName = trainName; }
-
-    public String getTrainType() { return trainType; }
-    public void setTrainType(String trainType) { this.trainType = trainType; }
-
-    public String getDepartureStationName() { return departureStationName; }
-    public void setDepartureStationName(String departureStationName) { this.departureStationName = departureStationName; }
-
-    public String getArrivalStationName() { return arrivalStationName; }
-    public void setArrivalStationName(String arrivalStationName) { this.arrivalStationName = arrivalStationName; }
-
-    public Timestamp getDepartureTime() { return departureTime; }
-    public void setDepartureTime(Timestamp departureTime) { this.departureTime = departureTime; }
-
-    public Timestamp getArrivalTime() { return arrivalTime; }
-    public void setArrivalTime(Timestamp arrivalTime) { this.arrivalTime = arrivalTime; }
+    public void setDepartureStation(String departureStation) { this.departureStation = departureStation; }
+    public void setArrivalStation(String arrivalStation) { this.arrivalStation = arrivalStation; }
+    public void setDepartureTime(LocalDateTime departureTime) { this.departureTime = departureTime; }
+    public void setArrivalTime(LocalDateTime arrivalTime) { this.arrivalTime = arrivalTime; }
 
 }
