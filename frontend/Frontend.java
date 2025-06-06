@@ -7,6 +7,8 @@ public class Frontend {
     private final Scanner scanner = new Scanner(System.in);
     private final ReservationService service = new ReservationService();
 
+    
+
     public void start() {
         while (true) {
             printMenu();
@@ -43,42 +45,135 @@ public class Frontend {
     private void insertPassenger() {
         System.out.print("승객의 ID를 입력하세요 (예: P100): ");
         String id = scanner.nextLine();
+        if (id.isEmpty()) {
+            System.out.println("승객 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+        
         System.out.print("이름: ");
         String firstName = scanner.nextLine();
+        if (firstName.isEmpty()) {
+            System.out.println("이름은 비어 있을 수 없습니다.");
+            return;
+        }
+        
         System.out.print("성: ");
         String lastName = scanner.nextLine();
+        if (lastName.isEmpty()) {
+            System.out.println("성은 비어 있을 수 없습니다.");
+            return;
+        }
+        
         System.out.print("이메일: ");
         String email = scanner.nextLine();
+        if (email.isEmpty()) {
+            System.out.println("이메일은 비어 있을 수 없습니다.");
+            return;
+        }
+
+        
         System.out.print("전화번호: ");
         String phone = scanner.nextLine();
+        if (phone.isEmpty()) {
+            System.out.println("전화번호는 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        try {
+            Passenger p = new Passenger(id, firstName, lastName, email, phone);
+            passengerService.addPassenger(p);
+            System.out.println("[승객 등록 성공]");
+        } catch (BusinessException e) {
+            System.out.println("[승객 등록 실패] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
+        }
 
-        service.addPassenger(id, firstName, lastName, email, phone);
     }
 
     private void searchTrainScheduleByName() {
         System.out.print("기차 이름을 입력하세요: ");
         String trainName = scanner.nextLine();
-        service.showScheduleByTrainName(trainName);
+        
+        if (trainName.isEmpty()) {
+            System.out.println("기차 이름은 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        try {
+            passengerService.showScheduleByTrainName(trainName);
+        } catch (BusinessException e) {
+            System.out.println("[스케줄 조회 실패] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
+        }
+        
     }
 
     private void showPassengerCountByDestination() {
         System.out.print("목적지를 입력하세요: ");
         String destination = scanner.nextLine();
-        service.countPassengersByDestination(destination);
+        
+        if (destination.isEmpty()) {
+            System.out.println("❗️ 목적지는 비어 있을 수 없습니다.");
+            return;
+        }
+
+        try {
+            passengerService.countPassengersByDestination(destination);
+        } catch (BusinessException e) {
+            System.out.println("[조회 실패] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
+        }
+
     }
 
     private void updatePassengerEmail() {
         System.out.print("이메일을 수정할 승객의 ID를 입력하세요: ");
         String passengerId = scanner.nextLine();
+        
+        if (passengerId.isEmpty()) {
+            System.out.println("❗️ 승객 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+        
         System.out.print("새 이메일 주소를 입력하세요: ");
         String newEmail = scanner.nextLine();
-        service.updatePassengerEmail(passengerId, newEmail);
+        
+        if (newEmail.isEmpty()) {
+            System.out.println("❗️ 이메일은 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        try {
+            passengerService.updatePassengerEmail(passengerId, newEmail);
+            System.out.println("[이메일 수정 성공]");
+        } catch (BusinessException e) {
+            System.out.println("[이메일 수정 실패] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
+        }
+        
     }
 
 
     private void deletePassengerByName() {
         System.out.print("삭제할 승객의 ID를 입력하세요: ");
         String passengerId = scanner.nextLine();
-        service.deletePassenger(passengerId);
+        
+        if (passengerId.isEmpty()) {
+            System.out.println("❗️ 승객 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        try {
+            passengerService.deletePassenger(passengerId);
+            System.out.println("[승객 삭제 성공]");
+        } catch (BusinessException e) {
+            System.out.println("[승객 삭제 실패] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
+        }
     }
 }
