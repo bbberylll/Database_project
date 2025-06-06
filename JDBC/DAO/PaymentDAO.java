@@ -136,5 +136,40 @@ public class PaymentDAO {
 
         return null;
     }
+    
+ // ================================================
+    // 2) 새로 추가된 메서드: Connection을 외부에서 받아서 처리
+    //    → Service 계층에서 트랜잭션을 제어할 때 사용
+    // ================================================
+
+    /**
+     * *** 신규 *** 
+     * Service 계층에서 하나의 Connection을 공유하며 결제 INSERT
+     * (4단계 트랜잭션 중 4번 단계에서 호출)
+     */
+    public void insertPayment(Connection conn, Payment payment) {
+        String sql = "INSERT INTO payment (reservation_id, payment_date, amount, payment_method, payment_status) VALUES (?, ?, ?, ?, ?)";
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            pstmt.setInt(1, payment.getReservationId());
+            pstmt.setTimestamp(2, Timestamp.valueOf(payment.getPaymentDate()));
+            pstmt.setBigDecimal(3, payment.getAmount());
+            pstmt.setString(4, payment.getPaymentMethod());
+            pstmt.setString(5, payment.getPaymentStatus());
+            pstmt.executeUpdate();
+            rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                payment.setPaymentId(rs.getInt(1));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("결제 처리 실패: " + e.getMessage(), e);
+        } finally {
+            DBUtil.closeQuietly(rs);
+            DBUtil.closeQuietly(pstmt);
+            // conn은 Service에서 관리하므로 여기서 닫지 않습니다.
+        }
+    }
 
 }
