@@ -40,7 +40,7 @@ public class TrainService {
     }
 
     public int getReservedSeatCount(String trainId) {
-        return dao.countReservedSeatsByTrainId(trainId);
+        return trainDao.countReservedSeatsByTrainId(trainId);
     }
 
 
@@ -54,4 +54,5 @@ public class TrainService {
     public List<TrainSchedule> findSchedulesByTrainName(String trainName) {
         return scheduleDao.getSchedulesByTrainName(trainName.trim());
     }
+    
 }
