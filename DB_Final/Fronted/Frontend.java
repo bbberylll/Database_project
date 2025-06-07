@@ -1,18 +1,29 @@
 package Fronted;
 
 import service.PassengerService;
+import service.TrainService;
+import service.BookingService;
+
 import model.Passenger;
 import model.Train;
 import model.Reservation;
-import service.BookingService;
+import model.TrainSchedule;
+
 import exception.BusinessException;
+
+import java.util.List;
 import java.util.Scanner;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class Frontend {
     private final Scanner scanner = new Scanner(System.in);
     
     private final PassengerService passengerService = new PassengerService();
     private final BookingService bookingService = new BookingService();
+    private final TrainService trainService = new TrainService();
+
 
     
 
@@ -29,9 +40,9 @@ public class Frontend {
                 case 5 -> deletePassengerByName();
                 case 6 -> insertTrain();
                 case 7 -> listAllTrains();
-                case 8 -> searchTrainsByDestination();
-                case 9 -> showReservationCountByTrain();
-                case 10 -> updateTrainDepartureTime();
+                case 8 -> findTrainsByDestination();
+                case 9 -> checkReservedSeatCount();
+                case 10 -> updateDepartureTime();
                 case 11 -> deleteTrainById();
                 case 0 -> {
                     System.out.println("프로그램을 종료합니다.");
@@ -112,7 +123,7 @@ public class Frontend {
 
     private void searchTrainScheduleByName() {
         System.out.print("기차 이름을 입력하세요: ");
-        String trainName = scanner.nextLine();
+        String trainName = scanner.nextLine().trim();
         
         if (trainName.isEmpty()) {
             System.out.println("기차 이름은 비어 있을 수 없습니다.");
@@ -120,15 +131,28 @@ public class Frontend {
         }
         
         try {
-            bookingService.showScheduleByTrainName(trainName);
+            List<TrainSchedule> list = trainService.findSchedulesByTrainName(trainName);
+            if (list.isEmpty()) {
+                System.out.println("해당 기차명으로 스케줄이 없습니다: " + trainName);
+            } else {
+                System.out.println("===== 기차 스케줄 =====");
+                for (TrainSchedule ts : list) {
+                    System.out.printf("ID:%d, 출발역:%s → 도착역:%s, 출발:%s, 도착:%s%n",
+                        ts.getScheduleId(),
+                        ts.getDepartureStationId(),
+                        ts.getArrivalStationId(),
+                        ts.getDepartureTime(),
+                        ts.getArrivalTime()
+                    );
+                }
+            }
         } catch (BusinessException e) {
             System.out.println("[스케줄 조회 실패] " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("[알 수 없는 오류] " + e.getMessage());
         }
         
     }
-
+    
+ // 3. 목적지별 예약된 승객 수 조회
     private void showPassengerCountByDestination() {
         System.out.print("목적지를 입력하세요: ");
         String destination = scanner.nextLine();
@@ -139,7 +163,8 @@ public class Frontend {
         }
 
         try {
-            bookingService.countPassengersByDestination(destination);
+            int count = bookingService.countPassengersByDestination(destination);
+            System.out.printf("'%s' 목적지 예약 승객 수: %d명%n", destination, count);
         } catch (BusinessException e) {
             System.out.println("[조회 실패] " + e.getMessage());
         } catch (Exception e) {
@@ -147,7 +172,8 @@ public class Frontend {
         }
 
     }
-
+    
+    // 4. 승객 이메일 수정
     private void updatePassengerEmail() {
         System.out.print("이메일을 수정할 승객의 ID를 입력하세요: ");
         String passengerId = scanner.nextLine();
@@ -176,7 +202,7 @@ public class Frontend {
         
     }
 
-
+    // 5. 승객 삭제
     private void deletePassengerByName() {
         System.out.print("삭제할 승객의 ID를 입력하세요: ");
         String passengerId = scanner.nextLine();
@@ -196,105 +222,211 @@ public class Frontend {
         }
     }
 
+    // 6. 기차 등록
     private void insertTrain() {
-        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
-            System.out.print("Train ID: ");
-            String trainId = scanner.nextLine();
-            System.out.print("Train Name: ");
-            String name = scanner.nextLine();
-            System.out.print("Source: ");
-            String source = scanner.nextLine();
-            System.out.print("Destination: ");
-            String destination = scanner.nextLine();
-            System.out.print("Departure Time (YYYY-MM-DD HH:MM:SS): ");
-            String departureTime = scanner.nextLine();
-
-            String sql = "INSERT INTO train (train_id, name, source, destination, departure_time) VALUES (?, ?, ?, ?, ?)";
-            var stmt = conn.prepareStatement(sql);
-            stmt.setString(1, trainId);
-            stmt.setString(2, name);
-            stmt.setString(3, source);
-            stmt.setString(4, destination);
-            stmt.setString(5, departureTime);
-            int rows = stmt.executeUpdate();
-            System.out.println(rows + "개의 기차 정보가 등록되었습니다.");
-        } catch (Exception e) {
-            e.printStackTrace();
+        System.out.print("열차의 ID를 입력하세요: ");
+        String trainID = scanner.nextLine();
+        if (trainID.isEmpty()) {
+            System.out.println("열차 ID는 비어 있을 수 없습니다.");
+            return;
         }
+        
+        System.out.print("열차 이름: ");
+        String trainName = scanner.nextLine();
+        if (trainName.isEmpty()) {
+            System.out.println("열차 이름은 비어 있을 수 없습니다.");
+            return;
+        }
+
+        System.out.print("열차 타입: ");
+        String trainType = scanner.nextLine();
+        if (trainType.isEmpty()) {
+            System.out.println("열차 타입은 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        System.out.print("열차 출발역 ID: ");
+        String trainDepID = scanner.nextLine();
+        if (trainDepID.isEmpty()) {
+            System.out.println("열차 출발역 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+
+        System.out.print("열차 도착역 ID: ");
+        String trainArrID = scanner.nextLine();
+        if (trainArrID.isEmpty()) {
+            System.out.println("열차 도착역 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        System.out.print("출발 시간: ");
+        String depTimeStr = scanner.nextLine();
+        if (depTimeStr.isEmpty()) {
+            System.out.println("출발 시간은 비어 있을 수 없습니다.");
+            return;
+        }
+
+        
+        System.out.print("도착 시간: ");
+        String arrIDStr = scanner.nextLine();
+        if (arrIDStr.isEmpty()) {
+            System.out.println("도착 시간은 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        try {
+            LocalDateTime depTime = LocalDateTime.parse(depTimeStr, formatter);
+            LocalDateTime arrTime = LocalDateTime.parse(arrIDStr, formatter);
+
+            Train t = new Train(trainID, trainName, trainType, trainDepID, trainArrID, depTime, arrTime);
+            trainService.addTrain(t);
+            System.out.println("[열차 등록 성공]");
+
+        } catch (DateTimeParseException e) {
+            System.out.println("[시간 형식 오류] yyyy-MM-dd HH:mm:ss 형식으로 입력해주세요.");
+        } catch (BusinessException e) {
+            System.out.println("[열차 등록 실패] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
+        }
+
     }
 
+    // 7. 모든 기차 목록 조회
     private void listAllTrains() {
-        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
-            var stmt = conn.prepareStatement("SELECT * FROM train");
-            var rs = stmt.executeQuery();
-            System.out.println("Train ID | Name | Source | Destination | Departure Time");
-            while (rs.next()) {
-                System.out.printf("%s | %s | %s | %s | %s%n", rs.getString("train_id"), rs.getString("name"), rs.getString("source"), rs.getString("destination"), rs.getString("departure_time"));
+        try {
+            List<Train> trains = trainService.listAllTrains();
+
+            if (trains.isEmpty()) {
+                System.out.println("🚫 등록된 열차가 없습니다.");
+                return;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
-    private void searchTrainsByDestination() {
-        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
-            System.out.print("목적지를 입력하세요: ");
-            String destination = scanner.nextLine();
-            var stmt = conn.prepareStatement("SELECT * FROM train WHERE destination = ?");
-            stmt.setString(1, destination);
-            var rs = stmt.executeQuery();
-            System.out.println("Train ID | Name | Source | Destination | Departure Time");
-            while (rs.next()) {
-                System.out.printf("%s | %s | %s | %s | %s%n", rs.getString("train_id"), rs.getString("name"), rs.getString("source"), rs.getString("destination"), rs.getString("departure_time"));
+            System.out.println("등록된 열차 목록: ");
+            for (Train train : trains) {
+                System.out.println("-----------------------------------");
+                System.out.println("열차 ID: " + train.getTrainId());
+                System.out.println("열차 이름: " + train.getTrainName());
+                System.out.println("열차 종류: " + train.getTrainType());
+                System.out.println("출발역 ID: " + train.getDepartureStationId());
+                System.out.println("도착역 ID: " + train.getArrivalStationId());
+                System.out.println("출발 시간: " + train.getDepartureTime());
+                System.out.println("도착 시간: " + train.getArrivalTime());
             }
+            System.out.println("-----------------------------------");
+
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("[열차 목록 조회 실패] " + e.getMessage());
         }
     }
 
-    private void showReservationCountByTrain() {
-        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
-            var stmt = conn.prepareStatement("SELECT train_id, COUNT(*) AS count FROM reservation GROUP BY train_id");
-            var rs = stmt.executeQuery();
-            System.out.println("Train ID | 예약된 좌석 수");
-            while (rs.next()) {
-                System.out.printf("%s | %d%n", rs.getString("train_id"), rs.getInt("count"));
+    // 8. 목적지 기준 기차 조회
+        private void findTrainsByDestination() {
+        System.out.print("조회할 목적지 역 ID를 입력하세요: ");
+        String destination = scanner.nextLine();
+
+        if (destination.isEmpty()) {
+            System.out.println("❗️ 목적지 역 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+
+        try {
+            List<Train> trains = trainService.findTrainsByDestination(destination);
+
+            if (trains.isEmpty()) {
+                System.out.println("해당 목적지로 가는 열차가 없습니다.");
+                return;
             }
+
+            System.out.println("목적지 [" + destination + "]로 가는 열차 목록:");
+            for (Train train : trains) {
+                System.out.println("-----------------------------------");
+                System.out.println("열차 ID: " + train.getTrainId());
+                System.out.println("열차 이름: " + train.getTrainName());
+                System.out.println("열차 종류: " + train.getTrainType());
+                System.out.println("출발역 ID: " + train.getDepartureStationId());
+                System.out.println("출발 시간: " + train.getDepartureTime());
+                System.out.println("도착 시간: " + train.getArrivalTime());
+            }
+            System.out.println("-----------------------------------");
+
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("[기차 조회 실패] " + e.getMessage());
+        }
+    }
+    
+    // 9. 기차별 예약된 좌석 수 조회
+    private void checkReservedSeatCount() {
+        System.out.print("조회할 열차의 ID를 입력하세요: ");
+        String trainId = scanner.nextLine();
+
+        if (trainId.isEmpty()) {
+            System.out.println("❗️ 열차 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+
+        try {
+            int count = trainService.getReservedSeatCount(trainId);
+            System.out.println("열차 ID [" + trainId + "] 예약된 좌석 수: " + count + "개");
+        } catch (Exception e) {
+            System.out.println("[좌석 수 조회 실패] " + e.getMessage());
         }
     }
 
-    private void updateTrainDepartureTime() {
-        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
-            conn.setAutoCommit(false);
-            System.out.print("수정할 기차 ID: ");
-            String trainId = scanner.nextLine();
-            System.out.print("새 출발시간 (YYYY-MM-DD HH:MM:SS): ");
-            String newTime = scanner.nextLine();
-
-            var stmt = conn.prepareStatement("UPDATE train SET departure_time = ? WHERE train_id = ?");
-            stmt.setString(1, newTime);
-            stmt.setString(2, trainId);
-            int rows = stmt.executeUpdate();
-            conn.commit();
-            System.out.println(rows + "개의 기차 출발시간이 수정되었습니다.");
-        } catch (Exception e) {
-            e.printStackTrace();
+    // 10. 기차 출발시간 수정
+    private void updateDepartureTime() {
+        System.out.print("수정할 열차의 ID를 입력하세요: ");
+        String trainId = scanner.nextLine();
+        
+        if (trainId.isEmpty()) {
+            System.out.println("❗️ 열차 ID는 비어 있을 수 없습니다.");
+            return;
         }
+        
+        System.out.print("새 출발 시간을 입력하세요: ");
+        String newDepTimeStr = scanner.nextLine();
+        
+        if (newDepTimeStr.isEmpty()) {
+            System.out.println("❗️ 출발 시간은 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime newDepTime = LocalDateTime.parse(newDepTimeStr, formatter);
+
+            trainService.updateDepartureTime(trainId, newDepTime);
+            System.out.println("[시간 수정 성공]");
+        } catch (DateTimeParseException e) {
+            System.out.println("[시간 형식 오류] 형식은 yyyy-MM-dd HH:mm:ss 여야 합니다.");
+        } catch (BusinessException e) {
+            System.out.println("[시간 수정 실패] " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
+        }
+        
     }
 
+    // 11. 기차 삭제
     private void deleteTrainById() {
-        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
-            System.out.print("삭제할 기차 ID: ");
-            String trainId = scanner.nextLine();
-            var stmt = conn.prepareStatement("DELETE FROM train WHERE train_id = ?");
-            stmt.setString(1, trainId);
-            int rows = stmt.executeUpdate();
-            System.out.println(rows + "개의 기차 정보가 삭제되었습니다.");
+        System.out.print("삭제할 열차의 ID를 입력하세요: ");
+        String trainId = scanner.nextLine();
+        
+        if (trainId.isEmpty()) {
+            System.out.println("❗️ 열차 ID는 비어 있을 수 없습니다.");
+            return;
+        }
+        
+        try {
+            trainService.deleteTrain(trainId);
+            System.out.println("[열차 삭제 성공]");
+        } catch (BusinessException e) {
+            System.out.println("[열차 삭제 실패] " + e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("[알 수 없는 오류] " + e.getMessage());
         }
     }
-
+    
 }
