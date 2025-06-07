@@ -1,4 +1,4 @@
-package Fronted;
+package Frontend;
 
 import service.PassengerService;
 import service.TrainService;
@@ -13,6 +13,9 @@ import exception.BusinessException;
 
 import java.util.List;
 import java.util.Scanner;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class Frontend {
     private final Scanner scanner = new Scanner(System.in);
@@ -37,9 +40,9 @@ public class Frontend {
                 case 5 -> deletePassengerByName();
                 case 6 -> insertTrain();
                 case 7 -> listAllTrains();
-                case 8 -> searchTrainsByDestination();
-                case 9 -> showReservationCountByTrain();
-                case 10 -> updateTrainDepartureTime();
+                case 8 -> findTrainsByDestination();
+                case 9 -> checkReservedSeatCount();
+                case 10 -> updateDepartureTime();
                 case 11 -> deleteTrainById();
                 case 0 -> {
                     System.out.println("프로그램을 종료합니다.");
@@ -222,58 +225,66 @@ public class Frontend {
     private void insertTrain() {
         System.out.print("열차의 ID를 입력하세요: ");
         String trainID = scanner.nextLine();
-        if (id.isEmpty()) {
+        if (trainID.isEmpty()) {
             System.out.println("열차 ID는 비어 있을 수 없습니다.");
             return;
         }
         
         System.out.print("열차 이름: ");
         String trainName = scanner.nextLine();
-        if (firstName.isEmpty()) {
+        if (trainName.isEmpty()) {
             System.out.println("열차 이름은 비어 있을 수 없습니다.");
             return;
         }
 
         System.out.print("열차 타입: ");
         String trainType = scanner.nextLine();
-        if (firstName.isEmpty()) {
+        if (trainType.isEmpty()) {
             System.out.println("열차 타입은 비어 있을 수 없습니다.");
             return;
         }
         
         System.out.print("열차 출발역 ID: ");
         String trainDepID = scanner.nextLine();
-        if (lastName.isEmpty()) {
+        if (trainDepID.isEmpty()) {
             System.out.println("열차 출발역 ID는 비어 있을 수 없습니다.");
             return;
         }
 
         System.out.print("열차 도착역 ID: ");
         String trainArrID = scanner.nextLine();
-        if (lastName.isEmpty()) {
+        if (trainArrID.isEmpty()) {
             System.out.println("열차 도착역 ID는 비어 있을 수 없습니다.");
             return;
         }
         
         System.out.print("출발 시간: ");
-        String depTime = scanner.nextLine();
-        if (email.isEmpty()) {
+        String depTimeStr = scanner.nextLine();
+        if (depTimeStr.isEmpty()) {
             System.out.println("출발 시간은 비어 있을 수 없습니다.");
             return;
         }
 
         
         System.out.print("도착 시간: ");
-        String arrID = scanner.nextLine();
-        if (phone.isEmpty()) {
+        String arrIDStr = scanner.nextLine();
+        if (arrIDStr.isEmpty()) {
             System.out.println("도착 시간은 비어 있을 수 없습니다.");
             return;
         }
         
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
         try {
-            Train t = new Train(trainID, trainName, trainType, trainDepID, trainArrID, depTime, arrID);
-            TrainService.addTrain(t);
+            LocalDateTime depTime = LocalDateTime.parse(depTimeStr, formatter);
+            LocalDateTime arrTime = LocalDateTime.parse(arrIDStr, formatter);
+
+            Train t = new Train(trainID, trainName, trainType, trainDepID, trainArrID, depTime, arrTime);
+            trainService.addTrain(t);
             System.out.println("[열차 등록 성공]");
+
+        } catch (DateTimeParseException e) {
+            System.out.println("[시간 형식 오류] yyyy-MM-dd HH:mm:ss 형식으로 입력해주세요.");
         } catch (BusinessException e) {
             System.out.println("[열차 등록 실패] " + e.getMessage());
         } catch (Exception e) {
@@ -374,16 +385,21 @@ public class Frontend {
         }
         
         System.out.print("새 출발 시간을 입력하세요: ");
-        String newDepTime = scanner.nextLine();
+        String newDepTimeStr = scanner.nextLine();
         
-        if (newDepTime.isEmpty()) {
+        if (newDepTimeStr.isEmpty()) {
             System.out.println("❗️ 출발 시간은 비어 있을 수 없습니다.");
             return;
         }
         
         try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime newDepTime = LocalDateTime.parse(newDepTimeStr, formatter);
+
             trainService.updateDepartureTime(trainId, newDepTime);
             System.out.println("[시간 수정 성공]");
+        } catch (DateTimeParseException e) {
+            System.out.println("[시간 형식 오류] 형식은 yyyy-MM-dd HH:mm:ss 여야 합니다.");
         } catch (BusinessException e) {
             System.out.println("[시간 수정 실패] " + e.getMessage());
         } catch (Exception e) {
@@ -411,5 +427,5 @@ public class Frontend {
             System.out.println("[알 수 없는 오류] " + e.getMessage());
         }
     }
-
+    
 }
