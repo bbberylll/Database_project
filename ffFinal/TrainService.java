@@ -39,6 +39,11 @@ public class TrainService {
         trainDao.deleteTrainById(trainId);
     }
 
+    public int getReservedSeatCount(String trainId) {
+        return dao.countReservedSeatsByTrainId(trainId);
+    }
+
+
     // ■ TrainSchedule 조회 통합 ■
 
     /**
