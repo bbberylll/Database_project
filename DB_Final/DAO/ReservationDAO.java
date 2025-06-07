@@ -176,7 +176,14 @@ public class ReservationDAO {
     }
 
     public int countPassengersByDestination(String destination) {
-        String sql = "SELECT COUNT(*) cnt FROM reservation r JOIN station s ON r.arrival_station_id = s.station_id WHERE s.station_name = ?";
+    	String sql = ""
+    			  + "SELECT COUNT(*) AS cnt\n"
+    			  + "FROM reservation r\n"
+    			  + "JOIN train_schedule ts\n"
+    			  + "  ON r.train_id = ts.train_id   -- ← 여기\n"
+    			  + "JOIN station s\n"
+    			  + "  ON ts.arrival_station_id = s.station_id\n"
+    			  + "WHERE s.station_name = ?";
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, destination);
