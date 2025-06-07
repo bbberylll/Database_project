@@ -1,4 +1,4 @@
-package Frontend;
+package Fronted;
 
 import service.PassengerService;
 import service.TrainService;
