@@ -1,6 +1,8 @@
 package ui;
 
 import JDBC.ReservationService;
+import JDBC.BusinessException;
+import JDBC.DTO.Passenger;
 import java.util.Scanner;
 
 public class Frontend {
@@ -20,6 +22,12 @@ public class Frontend {
                 case 3 -> showPassengerCountByDestination();
                 case 4 -> updatePassengerEmail();
                 case 5 -> deletePassengerByName();
+                case 6 -> insertTrain();
+                case 7 -> listAllTrains();
+                case 8 -> searchTrainsByDestination();
+                case 9 -> showReservationCountByTrain();
+                case 10 -> updateTrainDepartureTime();
+                case 11 -> deleteTrainById();
                 case 0 -> {
                     System.out.println("프로그램을 종료합니다.");
                     return;
@@ -37,6 +45,12 @@ public class Frontend {
                 3. 목적지별 예약된 승객 수 조회 (GROUP BY)
                 4. 승객 이메일 수정 (UPDATE)
                 5. 승객 삭제 (DELETE)
+                6. 기차 정보 등록 (INSERT)
+                7. 모든 기차 목록 조회 (SELECT)
+                8. 목적지 기준 기차 조회 (SELECT + 사용자 입력)
+                9. 기차별 예약된 좌석 수 조회 (SELECT + GROUP BY)
+                10. 기차 출발 시간 수정 (UPDATE + 사용자 입력)
+                11. 기차 삭제 (DELETE + 사용자 입력)
                 0. 종료
                 선택 >> 
                 """);
@@ -176,4 +190,106 @@ public class Frontend {
             System.out.println("[알 수 없는 오류] " + e.getMessage());
         }
     }
+
+    private void insertTrain() {
+        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
+            System.out.print("Train ID: ");
+            String trainId = scanner.nextLine();
+            System.out.print("Train Name: ");
+            String name = scanner.nextLine();
+            System.out.print("Source: ");
+            String source = scanner.nextLine();
+            System.out.print("Destination: ");
+            String destination = scanner.nextLine();
+            System.out.print("Departure Time (YYYY-MM-DD HH:MM:SS): ");
+            String departureTime = scanner.nextLine();
+
+            String sql = "INSERT INTO train (train_id, name, source, destination, departure_time) VALUES (?, ?, ?, ?, ?)";
+            var stmt = conn.prepareStatement(sql);
+            stmt.setString(1, trainId);
+            stmt.setString(2, name);
+            stmt.setString(3, source);
+            stmt.setString(4, destination);
+            stmt.setString(5, departureTime);
+            int rows = stmt.executeUpdate();
+            System.out.println(rows + "개의 기차 정보가 등록되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void listAllTrains() {
+        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
+            var stmt = conn.prepareStatement("SELECT * FROM train");
+            var rs = stmt.executeQuery();
+            System.out.println("Train ID | Name | Source | Destination | Departure Time");
+            while (rs.next()) {
+                System.out.printf("%s | %s | %s | %s | %s%n", rs.getString("train_id"), rs.getString("name"), rs.getString("source"), rs.getString("destination"), rs.getString("departure_time"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void searchTrainsByDestination() {
+        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
+            System.out.print("목적지를 입력하세요: ");
+            String destination = scanner.nextLine();
+            var stmt = conn.prepareStatement("SELECT * FROM train WHERE destination = ?");
+            stmt.setString(1, destination);
+            var rs = stmt.executeQuery();
+            System.out.println("Train ID | Name | Source | Destination | Departure Time");
+            while (rs.next()) {
+                System.out.printf("%s | %s | %s | %s | %s%n", rs.getString("train_id"), rs.getString("name"), rs.getString("source"), rs.getString("destination"), rs.getString("departure_time"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showReservationCountByTrain() {
+        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
+            var stmt = conn.prepareStatement("SELECT train_id, COUNT(*) AS count FROM reservation GROUP BY train_id");
+            var rs = stmt.executeQuery();
+            System.out.println("Train ID | 예약된 좌석 수");
+            while (rs.next()) {
+                System.out.printf("%s | %d%n", rs.getString("train_id"), rs.getInt("count"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateTrainDepartureTime() {
+        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
+            conn.setAutoCommit(false);
+            System.out.print("수정할 기차 ID: ");
+            String trainId = scanner.nextLine();
+            System.out.print("새 출발시간 (YYYY-MM-DD HH:MM:SS): ");
+            String newTime = scanner.nextLine();
+
+            var stmt = conn.prepareStatement("UPDATE train SET departure_time = ? WHERE train_id = ?");
+            stmt.setString(1, newTime);
+            stmt.setString(2, trainId);
+            int rows = stmt.executeUpdate();
+            conn.commit();
+            System.out.println(rows + "개의 기차 출발시간이 수정되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void deleteTrainById() {
+        try (var conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/train_db", "root", "password")) {
+            System.out.print("삭제할 기차 ID: ");
+            String trainId = scanner.nextLine();
+            var stmt = conn.prepareStatement("DELETE FROM train WHERE train_id = ?");
+            stmt.setString(1, trainId);
+            int rows = stmt.executeUpdate();
+            System.out.println(rows + "개의 기차 정보가 삭제되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
