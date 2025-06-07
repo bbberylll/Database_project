@@ -1,7 +1,7 @@
 package model;
 
 import java.time.LocalDateTime;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 
 public class Reservation {
@@ -10,7 +10,7 @@ public class Reservation {
     // 트랜잭션용 필드
     private Integer scheduleId;      
     private Integer seatId;          
-    private LocalDate travelDate;    
+    private LocalDateTime travelDate;    
 
     // 조회·출력을 위한 필드
     private String trainId;           
@@ -35,7 +35,7 @@ public class Reservation {
                        String passengerId,
                        int scheduleId,
                        int seatId,
-                       LocalDate travelDate) {
+                       LocalDateTime travelDate) {
         this.reservationId = reservationId;
         this.passengerId   = passengerId;
         this.scheduleId    = scheduleId;
