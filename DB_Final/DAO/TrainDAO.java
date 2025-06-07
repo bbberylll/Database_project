@@ -194,4 +194,19 @@ public class TrainDAO {
         return list;
     }
 
+    public int countReservedSeatsByTrainId(String trainId) {
+        String sql = "SELECT COUNT(*) FROM reservation WHERE train_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, trainId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("예약 좌석 수 조회 실패: " + e.getMessage(), e);
+        }
+        return 0;
+    }
+
 }
