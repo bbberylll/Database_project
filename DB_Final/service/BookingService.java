@@ -18,11 +18,11 @@ import DB.DBUtil;
 import exception.BusinessException;
 
 import java.util.List;
+import java.time.LocalDateTime;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public class BookingService {
     private final PassengerDAO passengerDAO      = new PassengerDAO();
@@ -63,10 +63,10 @@ public class BookingService {
     }
 
     /** 3) 목적지별 예약된 승객 수 조회 */
-    public void countPassengersByDestination(String destination) throws BusinessException {
+    public int countPassengersByDestination(String destination) throws BusinessException {
         try {
-            int count = reservationDAO.countPassengersByDestination(destination);
-            System.out.println("[목적지별 예약 승객 수] " + destination + " -> " + count + "명");
+            return reservationDAO.countPassengersByDestination(destination);
+
         } catch (RuntimeException e) {
             throw new BusinessException("승객 수 조회 중 오류: " + e.getMessage(), e);
         }
@@ -97,7 +97,7 @@ public class BookingService {
             String passengerId,
             int scheduleId,
             int seatId,
-            LocalDate travelDate,
+            LocalDateTime travelDate,
             int price,
             int amount,
             String method
